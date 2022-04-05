@@ -1,0 +1,2 @@
+model_checkpoint_path: "cnn_model_100_epochs.json"
+all_model_checkpoint_paths: "cnn_model_100_epochs.json"
