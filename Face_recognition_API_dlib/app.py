@@ -6,19 +6,19 @@ import json
 import re
 import pdb
 
-app2 = Flask(__name__)
+app = Flask(__name__)
 
 UPLOAD_FOLDER = 'received_files'
 UPLOAD_FOLDER2 = 'C:/Users/kalya_kl8c3da/Documents/GitHub/projects/Face_recognition_API_dlib/static/'
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 ALLOWED_EXTENSIONS = ['png', 'jpg', 'jpeg']
 
-# app2.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 #############face_util################
 import face_recognition as fr
 
-@app2.route('/image_upload', methods=['GET', 'POST'])
+@app.route('/image_upload', methods=['GET', 'POST'])
 def image_upload():
     # app = Flask(__name__)
     app = Flask(__name__, template_folder='templates')
@@ -43,14 +43,9 @@ def image_upload():
             return redirect('/downloadfile/' + filename)
     return render_template('image_upload.html')
 
-@app2.route("/downloadfile/<filename>", methods=['GET'])
+@app.route("/downloadfile/<filename>", methods=['GET'])
 def download_file(filename):
     return render_template('download.html', value=filename)
-
-
-
-
-
 
 def compare_faces(file1, file2):
     """
@@ -69,20 +64,6 @@ def compare_faces(file1, file2):
     results = fr.compare_faces([image1_encoding], image2_encoding)    
     return results[0]
 
-# Each face is tuple of (Name,sample image)    
-# known_faces = [('Obama','static/obama.jpg'),
-#                ('Kalyan Mohanty','static/kalyan.jpg'),
-#                ('Priyanka Pattnaik','static/priyanka.png'),
-#                ('Barsa Pattnaik','static/barsa.jpg'),
-#                ('Jaya D Singham','static/jaya.png'),
-#                ('khirod Behera','static/khirod.png'),
-#                ('Manas R Mohanty','static/manas.png'),
-#                ('Priti Sahoo','static/priti.png'),
-#                ('Smruti S Das','static/smruti.png'),
-#                ('Susantini Behara','static/susantini.png'),
-#                ('Prof. Patra','static/principal.jpg'),
-#                ('Girish','static/pan.jpg')
-#               ]
 def known_face():
     UPLOAD_FOLDER2 = 'C:/Users/kalya_kl8c3da/Documents/GitHub/projects/Face_recognition_API_dlib/static/'
     names = os.listdir(UPLOAD_FOLDER2)
@@ -154,13 +135,47 @@ def find_face_locations(file):
         return face_locations[0]        
 ##############end###############
 
+@app.route('/kf')
+def known():
+    UPLOAD_FOLDER2 = 'C:/Users/kalya_kl8c3da/Documents/GitHub/projects/Face_recognition_API_dlib/static/'
+    names = os.listdir(UPLOAD_FOLDER2)
+    removed_extension = []
+    for i in range(len(names)):
+        rmv = names[i].split('.')
+        rmv = rmv[0]
+        removed_extension.append(rmv)
+
+    final_path = []
+    for j in range(len(names)):
+        pth = UPLOAD_FOLDER2 + names[j]
+        final_path.append(pth)
+
+    final_name_list = []
+    for j in range(len(removed_extension)):     
+        final_name_list.append(removed_extension[j])
+
+    a = 0
+    kf = []
+    while True:
+        kf.append(final_name_list[a])
+        kf.append(final_path[a])
+        a = a + 1
+        if a == len(final_name_list):
+            break
+
+    it = iter(kf)
+    res_dct = dict(zip(it, it))
+    res_dct = list(res_dct.items())
+    print(res_dct) 
+    return json.dumps(res_dct)
+
 
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app2.route('/face_match', methods=['POST', 'GET'])
+@app.route('/face_match', methods=['POST', 'GET'])
 def face_match():
     if request.method == 'POST':
         # check if the post request has the file part
@@ -184,14 +199,20 @@ def face_match():
 
     # Return a demo page for GET request
     return '''
-    <!doctype html>
+    <html>
+    <html>
     <title>Face Match</title>
+    <body style = background-color: azure;>
+    <div align = "center">
     <h1>Upload two images</h1>
+    </div>
     <form method=post enctype=multipart/form-data>
       <input type=file name=file1>
       <input type=file name=file2>
       <input type=submit value=Upload>
     </form>
+    <body>
+    </html>
     '''
 
 def print_request(request):
@@ -206,7 +227,7 @@ def print_request(request):
     body_sub_image_data=re.sub(b'(\r\n\r\n)(.*?)(\r\n--)',br'\1<image raw data>\3', body_bytes,flags=re.DOTALL)
     print(body_sub_image_data.decode('utf-8'))
 
-@app2.route('/face_rec', methods=['POST', 'GET'])
+@app.route('/face_rec', methods=['POST', 'GET'])
 def face_recognition():
     if request.method == 'POST':
         # Print request url, headers and content
@@ -231,7 +252,7 @@ def face_recognition():
             param_features = request.args.get('facial_features', '')
             if param_features.lower() == 'true':
                 facial_features = find_facial_features(file)
-                # app2end facial_features to resp_data
+                # append facial_features to resp_data
                 resp_data.update({'facial_features': facial_features})
 
             # face_locations parameter:
@@ -245,24 +266,35 @@ def face_recognition():
     return '''
     <!doctype html>
     <title>Face Recognition</title>
+    <style>
+        .body{
+            background-color: azure;
+        }
+    </style>
+    <div align ='center'>
+    <body class = 'body'>
     <h1>Upload an image</h1>
+    </div>
+    <div align = 'center'>
     <form method=post enctype=multipart/form-data>
       <input type=file name=file>
       <input type=submit value=Upload>
     </form>
+    </div>
+    </body>
     '''
 
-@app2.route('/')
+@app.route('/')
 def hello_world():
-    return 'Face Recognition API'
+    return render_template('index.html')
 
 # Run in HTTP
 # When debug = True, code is reloaded on the fly while saved
 if __name__=='__main__':
-    app2.run(debug=True)
+    app.run(debug=True)
 
 # Run in HTTPS
 # https://werkzeug.palletsprojects.com/en/0.15.x/serving/#quickstart
 # ssl_context_ = ('ssl_keys/key.crt', 'ssl_keys/key.key')
-# app2.run(host='127.0.0.1', port='5000', ssl_context=ssl_context_)
+# app.run(host='127.0.0.1', port='5000', ssl_context=ssl_context_)
 # output: Running on https://127.0.0.1:5001/
